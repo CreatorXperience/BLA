@@ -69,17 +69,22 @@ export async function cacheDel(...keys: string[]): Promise<void> {
 }
 
 export async function cacheDelPattern(pattern: string): Promise<void> {
-  const stream = redis.scanStream({ match: pattern, count: 500 });
-  const keys: string[] = [];
-  await new Promise<void>((resolve, reject) => {
-    stream.on("data", (batch: string[]) => {
-      keys.push(...batch);
+  if (redis.status !== "ready") return;
+  try {
+    const stream = redis.scanStream({ match: pattern, count: 500 });
+    const keys: string[] = [];
+    await new Promise<void>((resolve, reject) => {
+      stream.on("data", (batch: string[]) => {
+        keys.push(...batch);
+      });
+      stream.on("end", () => resolve());
+      stream.on("error", reject);
     });
-    stream.on("end", () => resolve());
-    stream.on("error", reject);
-  });
-  if (keys.length > 0) {
-    await redis.del(...keys);
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } catch (error) {
+    logger.warn({ error, pattern }, "cache del pattern failed");
   }
 }
 

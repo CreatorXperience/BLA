@@ -8,31 +8,47 @@ import type { AddToWishlistInput, MoveToCartInput } from "../validators";
 export class WishlistService {
   async list(userId: string) {
     const items = await wishlistRepository.list(userId);
-    return items.map((item) => {
-      const minPrice = item.product.variants.reduce(
-        (min, v) => Math.min(min, Number(v.price)),
-        Number(item.product.basePrice),
-      );
-      return {
-        id: item.id,
-        createdAt: item.createdAt,
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          slug: item.product.slug,
-          brand: item.product.brand,
-          basePrice: item.product.basePrice.toString(),
-          minVariantPrice: minPrice.toFixed(2),
-          compareAtPrice: item.product.compareAtPrice?.toString() ?? null,
-          currency: item.product.currency,
-          rating: item.product.rating.toString(),
-          reviewCount: item.product.reviewCount,
-          status: item.product.status,
-          thumbnail: item.product.images.find((i) => i.isThumbnail)?.url ?? item.product.images[0]?.url ?? null,
-          inStock: item.product.variants.some((v) => (v.inventory?.quantity ?? 0) > 0),
-        },
-      };
-    });
+    return items.map((item) => ({
+      id: item.id,
+      productId: item.product.id,
+      createdAt: item.createdAt,
+      product: {
+        id: item.product.id,
+        name: item.product.name,
+        slug: item.product.slug,
+        brand: item.product.brand,
+        basePrice: item.product.basePrice.toString(),
+        compareAtPrice: item.product.compareAtPrice?.toString() ?? null,
+        currency: item.product.currency,
+        rating: item.product.rating.toString(),
+        reviewCount: item.product.reviewCount,
+        status: item.product.status,
+        images: item.product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          thumbUrl: img.thumbUrl,
+          altText: img.altText,
+          isThumbnail: img.isThumbnail,
+          sortOrder: img.sortOrder,
+        })),
+        variants: item.product.variants.map((v) => ({
+          id: v.id,
+          sku: v.sku,
+          color: v.color,
+          size: v.size,
+          price: v.price.toString(),
+          isActive: v.isActive,
+          isDefault: v.isDefault,
+          inventory: v.inventory
+            ? {
+                quantity: v.inventory.quantity,
+                reserved: v.inventory.reserved,
+                status: v.inventory.status,
+              }
+            : null,
+        })),
+      },
+    }));
   }
 
   async add(userId: string, input: AddToWishlistInput) {
