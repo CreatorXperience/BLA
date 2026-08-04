@@ -1,6 +1,35 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 import { cached, cacheKey } from "@/database/redis";
+
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  NIGERIA: "NG",
+  "UNITED STATES": "US",
+  USA: "US",
+  CANADA: "CA",
+  GHANA: "GH",
+  KENYA: "KE",
+  "SOUTH AFRICA": "ZA",
+  "UNITED KINGDOM": "GB",
+  UK: "GB",
+  GERMANY: "DE",
+  FRANCE: "FR",
+  ITALY: "IT",
+  SPAIN: "ES",
+  NETHERLANDS: "NL",
+  UAE: "AE",
+  "UNITED ARAB EMIRATES": "AE",
+  INDIA: "IN",
+  CHINA: "CN",
+  JAPAN: "JP",
+};
+
+function normalizeCountry(value: string): string {
+  const cleaned = value.trim().toUpperCase();
+  if (cleaned.length === 2) return cleaned;
+  return COUNTRY_NAME_TO_CODE[cleaned] ?? cleaned;
+}
+
 export class ShippingRepository {
   async listZones() {
     return prisma.shippingZone.findMany({
@@ -14,11 +43,12 @@ export class ShippingRepository {
   }
 
   async findZoneForDestination(params: { country: string; region?: string; city?: string }) {
+    const country = normalizeCountry(params.country);
     return cached(
-      cacheKey("shipping-zone", params.country, params.region ?? ""),
+      cacheKey("shipping-zone", country, params.region ?? ""),
       async () => {
         const zones = await prisma.shippingZone.findMany({
-          where: { isActive: true, countries: { has: params.country } },
+          where: { isActive: true, countries: { has: country } },
           include: { methods: { where: { isActive: true }, orderBy: { sortOrder: "asc" } }, rules: { where: { isActive: true }, orderBy: { priority: "desc" } } },
         });
         if (zones.length === 0) return null;

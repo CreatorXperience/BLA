@@ -5,7 +5,7 @@ import { resolveProvider } from "../providers";
 import { orderService } from "@/modules/orders/services/order.service";
 import { generateReference } from "@/utils/id";
 import { NotFoundError, PaymentError, ConflictError } from "@/shared/errors";
-import { paymentVerificationQueue } from "@/queues";
+import { paymentVerificationQueue, safeAdd } from "@/queues";
 import { logger } from "@/shared/logger";
 import { roundMoney, toNumber } from "@/utils/money";
 import type { InitializePaymentInput, RefundPaymentInput } from "../validators";
@@ -166,7 +166,7 @@ export class PaymentService {
     } else {
       // pending: schedule async re-verification
       await paymentRepository.update(paymentId, { lastVerifiedAt: new Date() });
-      await paymentVerificationQueue.add("verify-payment", {
+      await safeAdd(paymentVerificationQueue, "verify-payment", {
         paymentId,
         provider: payment.provider,
         reference: payment.reference,

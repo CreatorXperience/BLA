@@ -31,6 +31,8 @@ export class ShippingService {
       name: m.name,
       code: m.code,
       rate: this.calculateMethodRate(m, input),
+      baseRate: m.baseRate.toString(),
+      freeAbove: m.freeAbove?.toString() ?? null,
       estimatedDaysMin: m.estimatedDaysMin,
       estimatedDaysMax: m.estimatedDaysMax,
       isPickup: m.isPickup,

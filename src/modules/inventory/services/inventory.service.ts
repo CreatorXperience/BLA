@@ -2,7 +2,7 @@ import { MovementType } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 import { inventoryRepository } from "../repositories/inventory.repository";
 import { ConflictError, InsufficientStockError, NotFoundError } from "@/shared/errors";
-import { inventoryAlertQueue } from "@/queues";
+import { inventoryAlertQueue, safeAdd } from "@/queues";
 import { logger } from "@/shared/logger";
 import type { AdjustStockInput, CreateWarehouseInput, ReserveStockInput, SetStockInput } from "../validators";
 import type { InventoryQuery, MovementQuery } from "../validators";
@@ -258,7 +258,7 @@ export class InventoryService {
         currentQty: inventory.quantity,
         threshold: inventory.lowStockThreshold,
       });
-      await inventoryAlertQueue.add("low-stock-alert", {
+      await safeAdd(inventoryAlertQueue, "low-stock-alert", {
         variantId,
         productId: alert.productId,
         sku: alert.sku,

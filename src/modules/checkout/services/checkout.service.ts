@@ -9,7 +9,8 @@ import { paymentService } from "@/modules/payments/services/payment.service";
 import { NotFoundError, ValidationError, InsufficientStockError, CouponError } from "@/shared/errors";
 import { roundMoney, toNumber } from "@/utils/money";
 import { env } from "@/config";
-import { analyticsSyncQueue } from "@/queues";
+import { logger } from "@/shared/logger";
+import { analyticsSyncQueue, safeAdd } from "@/queues";
 import type { CheckoutAddressInput, CheckoutSummary, CreateOrderInput } from "../validators";
 
 interface Identity {
@@ -173,21 +174,26 @@ export class CheckoutService {
     await cartService.markCheckedOut(cart as never);
 
     // 7. Fire-and-forget analytics + notification
-    await analyticsSyncQueue.add("sync", {
+    await safeAdd(analyticsSyncQueue, "sync", {
       event: "PURCHASE",
       payload: { orderId: created.id, userId: identity.userId, value: totals.grandTotal, currency },
     });
 
-    // 8. Payment intent
-    const payment = await paymentService.initializeForOrder(
-      {
-        orderId: created.id,
-        provider: input.payment.provider,
-        method: input.payment.method,
-        callbackUrl: input.payment.callbackUrl,
-      },
-      { ip: identity.ip },
-    );
+    // 8. Payment intent (best-effort: order is still placed if the provider is down)
+    let payment = null;
+    try {
+      payment = await paymentService.initializeForOrder(
+        {
+          orderId: created.id,
+          provider: input.payment.provider,
+          method: input.payment.method,
+          callbackUrl: input.payment.callbackUrl,
+        },
+        { ip: identity.ip },
+      );
+    } catch (error) {
+      logger.warn({ error, orderId: created.id }, "payment initialization failed; order placed without payment link");
+    }
 
     return {
       order: {

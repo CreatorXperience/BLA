@@ -2,7 +2,7 @@ import sharp from "sharp";
 import { createHash, randomUUID } from "node:crypto";
 import { env } from "@/config";
 import { uploadObject, deleteObject, publicUrl } from "./storage.service";
-import { imageProcessingQueue } from "@/queues";
+import { imageProcessingQueue, safeAdd } from "@/queues";
 import { logger } from "@/shared/logger";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
@@ -86,7 +86,8 @@ export async function uploadRaw(params: { folder: string; originalName: string; 
 
 /** Queue async optimization for a previously-uploaded asset. */
 export async function queueOptimization(params: { mediaId: string; cloudKey: string; mime: string }) {
-  await imageProcessingQueue.add(
+  await safeAdd(
+    imageProcessingQueue,
     "optimize",
     {
       mediaId: params.mediaId,

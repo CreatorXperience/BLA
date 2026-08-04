@@ -99,6 +99,16 @@ export class CartRepository {
     return prisma.cart.update({ where: { id: cartId }, data: { status: CartStatus.CHECKED_OUT } });
   }
 
+  /** Reuse the user's single cart row after a checkout: reset to active, clear items. */
+  async reactivate(cartId: string) {
+    await prisma.cartItem.deleteMany({ where: { cartId } });
+    return prisma.cart.update({
+      where: { id: cartId },
+      data: { status: CartStatus.ACTIVE, couponCode: null, shippingCountry: null, shippingRegion: null, shippingMethodId: null },
+      include: cartInclude,
+    });
+  }
+
   /** Persist checkout-time data on the cart (coupon code, shipping details). */
   async saveCheckoutSnapshot(cartId: string, data: Prisma.CartUpdateInput) {
     return prisma.cart.update({ where: { id: cartId }, data });

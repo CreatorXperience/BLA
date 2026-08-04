@@ -4,7 +4,7 @@ import { orderRepository } from "../repositories/order.repository";
 import { NotFoundError, ForbiddenError } from "@/shared/errors";
 import { notificationService } from "@/modules/notifications/services/notification.service";
 import { orderConfirmationEmail, shipmentNotificationEmail } from "@/modules/notifications/services/templates";
-import { invoiceGenerationQueue } from "@/queues";
+import { invoiceGenerationQueue, safeAdd } from "@/queues";
 import { logger } from "@/shared/logger";
 import { cacheDelPattern } from "@/database/redis";
 import type { UpdateOrderStatusInput } from "../validators";
@@ -109,7 +109,7 @@ export class OrderService {
       subject: `Order confirmed — ${order.orderNumber}`,
       html: orderConfirmationEmail(order.orderNumber, data.userId ? "there" : data.email),
     });
-    await invoiceGenerationQueue.add("generate-invoice", { orderId: order.id, kind: "invoice" });
+    await safeAdd(invoiceGenerationQueue, "generate-invoice", { orderId: order.id, kind: "invoice" as const });
     await this.evict();
 
     return orderRepository.findById(order.id);

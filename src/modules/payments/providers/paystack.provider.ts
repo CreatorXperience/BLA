@@ -22,6 +22,7 @@ async function paystackRequest(path: string, options: RequestInit = {}, method =
       ...(options.headers ?? {}),
     },
     body: options.body,
+    signal: options.signal ?? AbortSignal.timeout(10_000),
   });
   const json = (await res.json().catch(() => ({}))) as { status?: boolean; message?: string; data?: unknown };
   if (!res.ok || json.status === false) {

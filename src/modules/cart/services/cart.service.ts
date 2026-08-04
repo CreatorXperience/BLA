@@ -68,6 +68,9 @@ export class CartService {
         const token = params.guestToken ?? `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
         cart = await cartRepository.createGuest(token);
       }
+    } else if (cart.status !== CartStatus.ACTIVE) {
+      // A previous checkout left this cart inactive — start a fresh active cart.
+      cart = await cartRepository.reactivate(cart.id);
     }
 
     // Validate variant + stock before adding
