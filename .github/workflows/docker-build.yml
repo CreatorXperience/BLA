@@ -19,6 +19,11 @@ jobs:
   test:
     name: Typecheck & Tests
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier
+      JWT_ACCESS_SECRET: ci-access-secret-with-32-characters-minimum
+      JWT_REFRESH_SECRET: ci-refresh-secret-with-32-characters-minimum
+      PASSWORD_PEPPER: ci-pepper
     steps:
       - uses: actions/checkout@v4
 

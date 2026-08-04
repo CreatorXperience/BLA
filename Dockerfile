@@ -2,6 +2,9 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+# Placeholder so `prisma generate` works without a live database at build time.
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
+
 # deps first for better layer caching
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
