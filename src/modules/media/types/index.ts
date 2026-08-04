@@ -1,10 +1,2 @@
-export {
-  RegisterMediaSchema,
-  RegisterMediaInput,
-  PresignUploadSchema,
-  PresignUploadInput,
-  MediaQuerySchema,
-  MediaQuery,
-  UpdateMediaSchema,
-  UpdateMediaInput,
-} from "../validators/media.schema";
+export { RegisterMediaSchema, PresignUploadSchema, MediaQuerySchema, UpdateMediaSchema } from "../validators/media.schema";
+export type { RegisterMediaInput, PresignUploadInput, MediaQuery, UpdateMediaInput } from "../validators/media.schema";

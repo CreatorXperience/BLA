@@ -8,8 +8,8 @@ import type { CreateCouponInput, UpdateCouponInput, CouponQuery } from "../valid
 
 export class CouponController {
   list = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await couponService.list(query as unknown as CouponQuery);
+    const query = c.req.valid("query" as never) as CouponQuery;
+    const result = await couponService.list(query);
     return c.json(success(result.data, "Coupons", { pagination: paginationMeta(result.page, result.perPage, result.total) }));
   };
 

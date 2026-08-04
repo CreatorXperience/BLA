@@ -109,7 +109,7 @@ export class ProductRepository {
     const where: Prisma.ProductWhereInput = {
       status: ProductStatus.PUBLISHED,
       deletedAt: null,
-      publishAt: { lte: new Date() },
+      AND: [{ OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }] }],
     };
 
     if (q.q) {

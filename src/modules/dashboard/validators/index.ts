@@ -1,1 +1,2 @@
-export { DashboardRangeSchema, DashboardRange } from "./dashboard.schema";
+export { DashboardRangeSchema } from "./dashboard.schema";
+export type { DashboardRange } from "./dashboard.schema";

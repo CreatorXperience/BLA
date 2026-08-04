@@ -1,11 +1,2 @@
-export {
-  CheckoutAddressSchema,
-  CheckoutAddressInput,
-  CheckoutShippingSchema,
-  CheckoutShippingInput,
-  CheckoutPreviewSchema,
-  CheckoutPreviewInput,
-  CreateOrderSchema,
-  CreateOrderInput,
-  CheckoutSummary,
-} from "./checkout.schema";
+export { CheckoutAddressSchema, CheckoutShippingSchema, CheckoutPreviewSchema, CreateOrderSchema } from "./checkout.schema";
+export type { CheckoutAddressInput, CheckoutShippingInput, CheckoutPreviewInput, CreateOrderInput, CheckoutSummary } from "./checkout.schema";

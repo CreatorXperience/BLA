@@ -1,6 +1,5 @@
 export {
   AddToWishlistSchema,
-  AddToWishlistInput,
   MoveToCartSchema,
-  MoveToCartInput,
 } from "./wishlist.schema";
+export type { AddToWishlistInput, MoveToCartInput } from "./wishlist.schema";

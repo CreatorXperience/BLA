@@ -1,8 +1,2 @@
-export {
-  SearchQuerySchema,
-  SearchQueryInput,
-  AutocompleteQuerySchema,
-  AutocompleteQueryInput,
-  SearchResult,
-  AutocompleteResult,
-} from "../validators/search.schema";
+export { SearchQuerySchema, AutocompleteQuerySchema } from "../validators/search.schema";
+export type { SearchQueryInput, AutocompleteQueryInput, SearchResult, AutocompleteResult } from "../validators/search.schema";

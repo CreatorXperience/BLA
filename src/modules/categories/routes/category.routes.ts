@@ -2,14 +2,14 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { categoryController } from "../controllers/category.controller";
 import { requireAuth, requireRole } from "@/middleware/auth";
-import { CreateCategorySchema, UpdateCategorySchema } from "../validators/category.schema";
+import { CreateCategorySchema, UpdateCategorySchema, CategoryQuerySchema } from "../validators/category.schema";
 import { IdParamSchema } from "@/shared/dto";
 
 export function categoryRoutes(): Hono {
   const router = new Hono();
 
   // Public
-  router.get("/", categoryController.list);
+  router.get("/", zValidator("query", CategoryQuerySchema), categoryController.list);
   router.get("/slug/:slug", categoryController.getBySlug);
   router.get("/:id", categoryController.get);
 

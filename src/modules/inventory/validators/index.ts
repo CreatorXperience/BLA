@@ -1,14 +1,2 @@
-export {
-  AdjustStockSchema,
-  AdjustStockInput,
-  SetStockSchema,
-  SetStockInput,
-  ReserveStockSchema,
-  ReserveStockInput,
-  CreateWarehouseSchema,
-  CreateWarehouseInput,
-  InventoryQuerySchema,
-  InventoryQuery,
-  MovementQuerySchema,
-  MovementQuery,
-} from "./inventory.schema";
+export { AdjustStockSchema, SetStockSchema, ReserveStockSchema, CreateWarehouseSchema, InventoryQuerySchema, MovementQuerySchema } from "./inventory.schema";
+export type { AdjustStockInput, SetStockInput, ReserveStockInput, CreateWarehouseInput, InventoryQuery, MovementQuery } from "./inventory.schema";

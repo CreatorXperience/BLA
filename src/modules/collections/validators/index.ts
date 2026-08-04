@@ -1,10 +1,2 @@
-export {
-  CreateCollectionSchema,
-  CreateCollectionInput,
-  UpdateCollectionSchema,
-  UpdateCollectionInput,
-  CollectionQuerySchema,
-  CollectionQuery,
-  AddProductsSchema,
-  AddProductsInput,
-} from "./collection.schema";
+export { CreateCollectionSchema, UpdateCollectionSchema, CollectionQuerySchema, AddProductsSchema } from "./collection.schema";
+export type { CreateCollectionInput, UpdateCollectionInput, CollectionQuery, AddProductsInput } from "./collection.schema";

@@ -17,8 +17,8 @@ export class ProductController {
   // --- public catalog -------------------------------------------------------
 
   listPublic = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await productService.listPublic(query as unknown as PublicProductQuery);
+    const query = c.req.valid("query" as never) as PublicProductQuery;
+    const result = await productService.listPublic(query);
     return c.json(success(result, "Products", { cache: true }));
   };
 
@@ -79,8 +79,8 @@ export class ProductController {
   // --- admin ----------------------------------------------------------------
 
   listAdmin = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await productService.listAdmin(query as unknown as AdminProductQuery);
+    const query = c.req.valid("query" as never) as AdminProductQuery;
+    const result = await productService.listAdmin(query);
     return c.json(success(result, "Products"));
   };
 

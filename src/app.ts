@@ -7,8 +7,8 @@ import { errorHandler } from "@/middleware/errorHandler";
 import { secureHeaders } from "@/middleware/security";
 
 import { authRoutes } from "@/modules/auth/routes/auth.routes";
-import { userRoutes } from "@/modules/users/routes/users.routes";
 import { adminRoutes } from "@/modules/users/routes/admin.routes";
+import { meRoutes } from "@/modules/me/routes/me.routes";
 import { productRoutes } from "@/modules/products/routes/product.routes";
 import { categoryRoutes } from "@/modules/categories/routes/category.routes";
 import { collectionRoutes } from "@/modules/collections/routes/collection.routes";
@@ -19,7 +19,6 @@ import { shippingRoutes } from "@/modules/shipping/routes/shipping.routes";
 import { orderRoutes } from "@/modules/orders/routes/order.routes";
 import { paymentRoutes } from "@/modules/payments/routes/payment.routes";
 import { checkoutRoutes } from "@/modules/checkout/routes/checkout.routes";
-import { wishlistRoutes } from "@/modules/wishlist/routes/wishlist.routes";
 import { reviewRoutes } from "@/modules/reviews/routes/review.routes";
 import { mediaRoutes } from "@/modules/media/routes/media.routes";
 import { searchRoutes } from "@/modules/search/routes/search.routes";
@@ -55,7 +54,7 @@ export function buildApp(): Hono {
 
   const api = new Hono();
   api.route("/auth", authRoutes());
-  api.route("/users", userRoutes());
+  api.route("/me", meRoutes());
   api.route("/admin", adminRoutes());
   api.route("/products", productRoutes());
   api.route("/categories", categoryRoutes());
@@ -67,7 +66,6 @@ export function buildApp(): Hono {
   api.route("/orders", orderRoutes());
   api.route("/payments", paymentRoutes());
   api.route("/checkout", checkoutRoutes());
-  api.route("/wishlist", wishlistRoutes());
   api.route("/reviews", reviewRoutes());
   api.route("/media", mediaRoutes());
   api.route("/search", searchRoutes());

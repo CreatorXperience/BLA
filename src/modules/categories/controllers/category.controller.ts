@@ -4,11 +4,11 @@ import { success } from "@/shared/apiResponse";
 import { getAuth } from "@/middleware/auth";
 import { AuditAction } from "@prisma/client";
 import { recordAudit } from "@/middleware/audit";
-import type { CreateCategoryInput, UpdateCategoryInput } from "../validators";
+import type { CreateCategoryInput, UpdateCategoryInput, CategoryQuery } from "../validators";
 
 export class CategoryController {
   list = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
+    const query = c.req.valid("query" as never) as CategoryQuery;
     const categories = await categoryService.list(query);
     return c.json(success(categories, "Categories", { cache: true }));
   };

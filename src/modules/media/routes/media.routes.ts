@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { mediaController } from "../controllers/media.controller";
 import { requireAuth, requireRole } from "@/middleware/auth";
-import { PresignUploadSchema, RegisterMediaSchema, UpdateMediaSchema } from "../validators/media.schema";
+import { PresignUploadSchema, RegisterMediaSchema, UpdateMediaSchema, MediaQuerySchema } from "../validators/media.schema";
 import { IdParamSchema } from "@/shared/dto";
 import { rateLimit } from "@/middleware/rateLimit";
 
@@ -18,7 +18,7 @@ export function mediaRoutes(): Hono {
     mediaController.upload,
   );
 
-  router.get("/", mediaController.list);
+  router.get("/", zValidator("query", MediaQuerySchema), mediaController.list);
   router.get("/folders", mediaController.folders);
   router.get("/:id", zValidator("param", IdParamSchema), mediaController.get);
   router.patch("/:id", zValidator("param", IdParamSchema), zValidator("json", UpdateMediaSchema), mediaController.update);

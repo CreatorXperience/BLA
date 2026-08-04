@@ -7,7 +7,6 @@ export const UpdateProfileSchema = z
     firstName: z.string().trim().min(1).max(100).optional(),
     lastName: z.string().trim().min(1).max(100).optional(),
     phone: PhoneSchema,
-    avatarUrl: z.string().url().optional(),
     locale: z.string().length(2).optional(),
     currency: z.string().length(3).optional(),
     marketingOptIn: z.boolean().optional(),
@@ -61,31 +60,3 @@ export type CreateAddressInput = z.infer<typeof CreateAddressSchema>;
 export const UpdateAddressSchema = CreateAddressSchema.partial();
 
 export type UpdateAddressInput = z.infer<typeof UpdateAddressSchema>;
-
-export const SetDefaultAddressSchema = z.object({}).strict();
-
-export const NotificationPreferencesSchema = z
-  .object({
-    preferences: z.array(
-      z.object({
-        type: z.enum([
-          "ORDER_PLACED",
-          "PAYMENT_CONFIRMED",
-          "ORDER_SHIPPED",
-          "ORDER_DELIVERED",
-          "PASSWORD_RESET",
-          "WELCOME_EMAIL",
-          "EMAIL_VERIFICATION",
-          "LOW_STOCK_ALERT",
-          "ORDER_CANCELLED",
-          "REFUND_ISSUED",
-          "MARKETING",
-        ]),
-        channel: z.enum(["EMAIL", "SMS", "WHATSAPP", "PUSH"]),
-        enabled: z.boolean(),
-      }),
-    ),
-  })
-  .strict();
-
-export type NotificationPreferencesInput = z.infer<typeof NotificationPreferencesSchema>;

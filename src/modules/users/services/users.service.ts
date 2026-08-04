@@ -9,7 +9,6 @@ import { env } from "@/config";
 import type {
   ChangePasswordInput,
   CreateAddressInput,
-  NotificationPreferencesInput,
   UpdateEmailInput,
   UpdateProfileInput,
 } from "../types";
@@ -26,7 +25,6 @@ export class UserService {
     if (input.firstName !== undefined) data.firstName = input.firstName;
     if (input.lastName !== undefined) data.lastName = input.lastName;
     if (input.phone !== undefined) data.phone = input.phone ?? null;
-    if (input.avatarUrl !== undefined) data.avatarUrl = input.avatarUrl;
     if (input.locale !== undefined) data.locale = input.locale;
     if (input.currency !== undefined) data.currency = input.currency;
     if (input.marketingOptIn !== undefined) data.marketingOptIn = input.marketingOptIn;
@@ -130,28 +128,6 @@ export class UserService {
 
   revokeAllSessions(userId: string, exceptSessionId?: string) {
     return userRepository.revokeAllSessions(userId, exceptSessionId);
-  }
-
-  // --- Notification preferences ---------------------------------------------
-
-  getNotificationPreferences(userId: string) {
-    return userRepository.getNotificationPreferences(userId);
-  }
-
-  updateNotificationPreferences(userId: string, input: NotificationPreferencesInput) {
-    return userRepository.upsertNotificationPreferences(userId, input.preferences);
-  }
-
-  // --- Notifications --------------------------------------------------------
-
-  async listNotifications(userId: string, options: { page: number; perPage: number }) {
-    const [total, data] = await userRepository.listNotifications(userId, options);
-    return { data, total, page: options.page, perPage: options.perPage };
-  }
-
-  async markNotificationRead(userId: string, notificationId: string) {
-    const result = await userRepository.markNotificationRead(userId, notificationId);
-    if (result.count === 0) throw new NotFoundError("Notification not found");
   }
 }
 

@@ -48,8 +48,8 @@ export class MediaController {
   };
 
   list = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await mediaService.list(query as unknown as MediaQuery);
+    const query = c.req.valid("query" as never) as MediaQuery;
+    const result = await mediaService.list(query);
     return c.json(success(result.data, "Media", { pagination: paginationMeta(result.page, result.perPage, result.total) }));
   };
 

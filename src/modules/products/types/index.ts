@@ -1,7 +1,1 @@
-export {
-  ProductSummary,
-  ProductResponse,
-  RelatedProductsInput,
-  RecentlyViewedInput,
-  RecommendationInput,
-} from "./product.types";
+export type { ProductSummary, ProductResponse, RelatedProductsInput, RecentlyViewedInput, RecommendationInput } from "./product.types";

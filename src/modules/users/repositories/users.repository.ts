@@ -114,50 +114,6 @@ export class UserRepository {
       data: { status: SessionStatus.REVOKED },
     });
   }
-
-  getNotificationPreferences(userId: string) {
-    return prisma.notificationPreference.findMany({ where: { userId } });
-  }
-
-  async upsertNotificationPreferences(
-    userId: string,
-    preferences: Array<{ type: string; channel: string; enabled: boolean }>,
-  ) {
-    await prisma.$transaction(
-      preferences.map((p) =>
-        prisma.notificationPreference.upsert({
-          where: {
-            userId_channel_type: {
-              userId,
-              channel: p.channel as never,
-              type: p.type as never,
-            },
-          },
-          update: { enabled: p.enabled },
-          create: { userId, channel: p.channel as never, type: p.type as never, enabled: p.enabled },
-        }),
-      ),
-    );
-  }
-
-  listNotifications(userId: string, options: { page: number; perPage: number }) {
-    return prisma.$transaction([
-      prisma.notification.count({ where: { userId } }),
-      prisma.notification.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        skip: (options.page - 1) * options.perPage,
-        take: options.perPage,
-      }),
-    ]);
-  }
-
-  markNotificationRead(userId: string, notificationId: string) {
-    return prisma.notification.updateMany({
-      where: { id: notificationId, userId },
-      data: { readAt: new Date() },
-    });
-  }
 }
 
 export const userRepository = new UserRepository();

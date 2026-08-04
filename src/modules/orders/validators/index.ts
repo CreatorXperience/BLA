@@ -1,11 +1,2 @@
-export {
-  UpdateOrderStatusSchema,
-  UpdateOrderStatusInput,
-  AddOrderNoteSchema,
-  AddOrderNoteInput,
-  AdminOrderQuerySchema,
-  AdminOrderQuery,
-  UserOrderQuerySchema,
-  UserOrderQuery,
-  OrderTimelineEntry,
-} from "./order.schema";
+export { UpdateOrderStatusSchema, AddOrderNoteSchema, AdminOrderQuerySchema, UserOrderQuerySchema } from "./order.schema";
+export type { UpdateOrderStatusInput, AddOrderNoteInput, AdminOrderQuery, UserOrderQuery, OrderTimelineEntry } from "./order.schema";

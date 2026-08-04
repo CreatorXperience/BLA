@@ -1,15 +1,2 @@
-export {
-  CreateShippingZoneSchema,
-  CreateShippingZoneInput,
-  UpdateShippingZoneSchema,
-  UpdateShippingZoneInput,
-  CreateShippingMethodSchema,
-  CreateShippingMethodInput,
-  UpdateShippingMethodSchema,
-  UpdateShippingMethodInput,
-  CreateShippingRuleSchema,
-  CreateShippingRuleInput,
-  EstimateShippingSchema,
-  EstimateShippingInput,
-  ShippingEstimateResult,
-} from "./shipping.schema";
+export { CreateShippingZoneSchema, UpdateShippingZoneSchema, CreateShippingMethodSchema, UpdateShippingMethodSchema, CreateShippingRuleSchema, EstimateShippingSchema } from "./shipping.schema";
+export type { CreateShippingZoneInput, UpdateShippingZoneInput, CreateShippingMethodInput, UpdateShippingMethodInput, CreateShippingRuleInput, EstimateShippingInput, ShippingEstimateResult } from "./shipping.schema";

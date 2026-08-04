@@ -2,13 +2,11 @@ import type { Context } from "hono";
 import { userService } from "../services/users.service";
 import { getAuth } from "@/middleware/auth";
 import { success } from "@/shared/apiResponse";
-import { paginationMeta } from "@/shared/apiResponse";
 import { AuditAction } from "@prisma/client";
 import { recordAudit } from "@/middleware/audit";
 import type {
   ChangePasswordInput,
   CreateAddressInput,
-  NotificationPreferencesInput,
   UpdateEmailInput,
   UpdateProfileInput,
 } from "../types";
@@ -96,36 +94,6 @@ export class UserController {
     const { user, session } = getAuth(c);
     await userService.revokeAllSessions(user.id, session?.sessionId);
     return c.json(success(null, "Other sessions revoked"));
-  };
-
-  // Notification preferences
-  getPreferences = async (c: Context): Promise<Response> => {
-    const { user } = getAuth(c);
-    const preferences = await userService.getNotificationPreferences(user.id);
-    return c.json(success(preferences, "Notification preferences"));
-  };
-
-  updatePreferences = async (c: Context): Promise<Response> => {
-    const { user } = getAuth(c);
-    const body = (await c.req.json()) as NotificationPreferencesInput;
-    await userService.updateNotificationPreferences(user.id, body);
-    return c.json(success(null, "Preferences updated"));
-  };
-
-  // In-app notifications
-  listNotifications = async (c: Context): Promise<Response> => {
-    const { user } = getAuth(c);
-    const page = Number(c.req.query("page") ?? 1);
-    const perPage = Number(c.req.query("perPage") ?? 20);
-    const { data, total } = await userService.listNotifications(user.id, { page, perPage });
-    return c.json(success(data, "Notifications", { pagination: paginationMeta(page, perPage, total) }));
-  };
-
-  markNotificationRead = async (c: Context): Promise<Response> => {
-    const { user } = getAuth(c);
-    const id = c.req.param("id") ?? "";
-    await userService.markNotificationRead(user.id, id);
-    return c.json(success(null, "Notification marked as read"));
   };
 }
 

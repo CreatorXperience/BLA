@@ -1,13 +1,5 @@
-export {
-  InitializePaymentSchema,
-  InitializePaymentInput,
-  InitiatePaymentSchema,
-  InitiatePaymentInput,
-  VerifyPaymentSchema,
-  VerifyPaymentInput,
-  RefundPaymentSchema,
-  RefundPaymentInput,
-} from "../validators/payment.schema";
+export { InitializePaymentSchema, InitiatePaymentSchema, VerifyPaymentSchema, RefundPaymentSchema } from "../validators/payment.schema";
+export type { InitializePaymentInput, InitiatePaymentInput, VerifyPaymentInput, RefundPaymentInput } from "../validators/payment.schema";
 export type {
   InitializePaymentParams,
   InitializePaymentResult,

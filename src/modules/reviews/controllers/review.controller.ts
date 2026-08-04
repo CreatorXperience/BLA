@@ -9,8 +9,8 @@ import type { CreateReviewInput, ModerateReviewInput, ReportReviewInput, ReviewQ
 export class ReviewController {
   listForProduct = async (c: Context): Promise<Response> => {
     const productId = c.req.param("productId") ?? "";
-    const query = c.req.query();
-    const result = await reviewService.listForProduct(productId, query as unknown as ReviewQuery);
+    const query = c.req.valid("query" as never) as ReviewQuery;
+    const result = await reviewService.listForProduct(productId, query);
     return c.json(success(result.data, "Reviews", { pagination: paginationMeta(result.page, result.perPage, result.total) }));
   };
 
@@ -39,8 +39,8 @@ export class ReviewController {
 
   // Admin
   listAdmin = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await reviewService.listAdmin(query as unknown as AdminReviewQuery);
+    const query = c.req.valid("query" as never) as AdminReviewQuery;
+    const result = await reviewService.listAdmin(query);
     return c.json(success(result.data, "Reviews", { pagination: paginationMeta(result.page, result.perPage, result.total) }));
   };
 

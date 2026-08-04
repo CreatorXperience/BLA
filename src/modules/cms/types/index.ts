@@ -1,10 +1,2 @@
-export {
-  UpsertHomepageSectionSchema,
-  UpsertHomepageSectionInput,
-  SetStoreSettingSchema,
-  UpsertAnnouncementSchema,
-  UpsertNavItemSchema,
-  UpsertNavItemInput,
-  UpsertPageSchema,
-  UpsertPageInput,
-} from "../validators/cms.schema";
+export { UpsertHomepageSectionSchema, SetStoreSettingSchema, UpsertAnnouncementSchema, UpsertNavItemSchema, UpsertPageSchema } from "../validators/cms.schema";
+export type { UpsertHomepageSectionInput, UpsertNavItemInput, UpsertPageInput } from "../validators/cms.schema";

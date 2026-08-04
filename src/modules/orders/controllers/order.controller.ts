@@ -14,8 +14,8 @@ export class OrderController {
 
   listMine = async (c: Context): Promise<Response> => {
     const { user } = getAuth(c);
-    const query = c.req.query();
-    const result = await orderService.listForUser(user.id, query as unknown as UserOrderQuery);
+    const query = c.req.valid("query" as never) as UserOrderQuery;
+    const result = await orderService.listForUser(user.id, query);
     return c.json(
       success(result.data, "Orders", { pagination: paginationMeta(result.page, result.perPage, result.total) }),
     );
@@ -66,8 +66,8 @@ export class OrderController {
   // --- admin ----------------------------------------------------------------
 
   listAdmin = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await orderService.listAdmin(query as unknown as AdminOrderQuery);
+    const query = c.req.valid("query" as never) as AdminOrderQuery;
+    const result = await orderService.listAdmin(query);
     return c.json(
       success(result.data, "Orders", { pagination: paginationMeta(result.page, result.perPage, result.total) }),
     );

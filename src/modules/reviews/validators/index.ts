@@ -1,12 +1,2 @@
-export {
-  CreateReviewSchema,
-  CreateReviewInput,
-  ReviewQuerySchema,
-  ReviewQuery,
-  AdminReviewQuerySchema,
-  AdminReviewQuery,
-  ModerateReviewSchema,
-  ModerateReviewInput,
-  ReportReviewSchema,
-  ReportReviewInput,
-} from "./review.schema";
+export { CreateReviewSchema, ReviewQuerySchema, AdminReviewQuerySchema, ModerateReviewSchema, ReportReviewSchema } from "./review.schema";
+export type { CreateReviewInput, ReviewQuery, AdminReviewQuery, ModerateReviewInput, ReportReviewInput } from "./review.schema";

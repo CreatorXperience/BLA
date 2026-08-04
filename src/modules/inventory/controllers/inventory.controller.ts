@@ -9,8 +9,8 @@ import type { InventoryQuery, MovementQuery } from "../validators";
 
 export class InventoryController {
   list = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await inventoryService.list(query as unknown as InventoryQuery);
+    const query = c.req.valid("query" as never) as InventoryQuery;
+    const result = await inventoryService.list(query);
     return c.json(success(result.data, "Inventory", { pagination: paginationMeta(result.page, result.perPage, result.total) }));
   };
 
@@ -21,8 +21,8 @@ export class InventoryController {
   };
 
   movements = async (c: Context): Promise<Response> => {
-    const query = c.req.query();
-    const result = await inventoryService.listMovements(query as unknown as MovementQuery);
+    const query = c.req.valid("query" as never) as MovementQuery;
+    const result = await inventoryService.listMovements(query);
     return c.json(success(result.data, "Stock movements", { pagination: paginationMeta(result.page, result.perPage, result.total) }));
   };
 

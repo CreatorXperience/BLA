@@ -1,15 +1,2 @@
-export {
-  UpdateProfileSchema,
-  UpdateProfileInput,
-  ChangePasswordSchema,
-  ChangePasswordInput,
-  UpdateEmailSchema,
-  UpdateEmailInput,
-  CreateAddressSchema,
-  CreateAddressInput,
-  UpdateAddressSchema,
-  UpdateAddressInput,
-  SetDefaultAddressSchema,
-  NotificationPreferencesSchema,
-  NotificationPreferencesInput,
-} from "../dto/users.dto";
+export { UpdateProfileSchema, ChangePasswordSchema, UpdateEmailSchema, CreateAddressSchema, UpdateAddressSchema } from "../dto/users.dto";
+export type { UpdateProfileInput, ChangePasswordInput, UpdateEmailInput, CreateAddressInput, UpdateAddressInput } from "../dto/users.dto";

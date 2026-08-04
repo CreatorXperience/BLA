@@ -1,22 +1,2 @@
-export {
-  RegisterSchema,
-  RegisterInput,
-  LoginSchema,
-  LoginInput,
-  ForgotPasswordSchema,
-  ForgotPasswordInput,
-  ResetPasswordSchema,
-  ResetPasswordInput,
-  VerifyEmailSchema,
-  VerifyEmailInput,
-  ResendVerificationSchema,
-  ResendVerificationInput,
-  RefreshTokenSchema,
-  RefreshTokenInput,
-  LogoutSchema,
-  LogoutInput,
-  GoogleOAuthSchema,
-  GoogleOAuthInput,
-  AuthTokens,
-  AuthResponse,
-} from "../dto/auth.dto";
+export { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, VerifyEmailSchema, ResendVerificationSchema, RefreshTokenSchema, LogoutSchema, GoogleOAuthSchema } from "../dto/auth.dto";
+export type { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput, VerifyEmailInput, ResendVerificationInput, RefreshTokenInput, LogoutInput, GoogleOAuthInput, AuthTokens, AuthResponse } from "../dto/auth.dto";

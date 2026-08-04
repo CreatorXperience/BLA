@@ -1,10 +1,2 @@
-export {
-  CreateCouponSchema,
-  CreateCouponInput,
-  UpdateCouponSchema,
-  UpdateCouponInput,
-  CouponQuerySchema,
-  CouponQuery,
-  CouponValidationContext,
-  CouponValidationResult,
-} from "./coupon.schema";
+export { CreateCouponSchema, UpdateCouponSchema, CouponQuerySchema } from "./coupon.schema";
+export type { CreateCouponInput, UpdateCouponInput, CouponQuery, CouponValidationContext, CouponValidationResult } from "./coupon.schema";

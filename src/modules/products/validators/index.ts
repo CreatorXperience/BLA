@@ -1,20 +1,2 @@
-export {
-  ProductImageSchema,
-  ProductVariantSchema,
-  ProductCategoryLinkSchema,
-  ProductCollectionLinkSchema,
-  SeoSchema,
-  CreateProductSchema,
-  CreateProductInput,
-  UpdateProductSchema,
-  UpdateProductInput,
-  ProductFlagsSchema,
-  ProductFlagsInput,
-  DuplicateProductSchema,
-  PublishProductSchema,
-  PublishProductInput,
-  PublicProductQuerySchema,
-  PublicProductQuery,
-  AdminProductQuerySchema,
-  AdminProductQuery,
-} from "./product.schema";
+export { ProductImageSchema, ProductVariantSchema, ProductCategoryLinkSchema, ProductCollectionLinkSchema, SeoSchema, CreateProductSchema, UpdateProductSchema, ProductFlagsSchema, DuplicateProductSchema, PublishProductSchema, PublicProductQuerySchema, AdminProductQuerySchema } from "./product.schema";
+export type { CreateProductInput, UpdateProductInput, ProductFlagsInput, PublishProductInput, PublicProductQuery, AdminProductQuery } from "./product.schema";
