@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("unhandledRejection", (reason) => {
-    logger.error({ reason }, "unhandled rejection");
+    logger.error({ err: reason }, "unhandled rejection");
     if (isProduction) process.exit(1);
   });
 }
