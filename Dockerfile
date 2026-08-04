@@ -7,10 +7,8 @@ ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 
 # deps first for better layer caching
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
-
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN npm ci --no-audit --no-fund
 
 COPY tsconfig.json ./tsconfig.json
 COPY scripts ./scripts
@@ -26,7 +24,8 @@ RUN apk add --no-cache tini
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev --no-audit --no-fund
+RUN npm ci --no-audit --no-fund \
+  && npm prune --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
