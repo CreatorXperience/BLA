@@ -20,7 +20,7 @@ FROM node:22-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini openssl
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
