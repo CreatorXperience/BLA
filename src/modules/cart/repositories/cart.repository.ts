@@ -96,6 +96,7 @@ export class CartRepository {
   }
 
   async markCheckedOut(cartId: string) {
+    await prisma.cartItem.deleteMany({ where: { cartId } });
     return prisma.cart.update({ where: { id: cartId }, data: { status: CartStatus.CHECKED_OUT } });
   }
 
