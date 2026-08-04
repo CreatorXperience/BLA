@@ -12,7 +12,8 @@ RUN npm ci --no-audit --no-fund
 COPY prisma ./prisma
 RUN npx prisma generate
 
-COPY tsconfig.json scripts ./scripts/
+COPY tsconfig.json ./tsconfig.json
+COPY scripts ./scripts
 COPY src ./src
 RUN npm run build
 
