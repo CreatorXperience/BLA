@@ -1,4 +1,4 @@
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, AddressType } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 import { cartService } from "@/modules/cart/services/cart.service";
 import { couponService } from "@/modules/coupons/services/coupon.service";
@@ -328,8 +328,12 @@ export class CheckoutService {
       type,
     };
 
-    // Use a saved address if it belongs to the user
-    if (identity.userId && input.addressId) {
+    if (!identity.userId) {
+      return { id: null, snapshot };
+    }
+
+    // Reuse a saved address when the client selected one
+    if (input.addressId) {
       const saved = await prisma.address.findFirst({ where: { id: input.addressId, userId: identity.userId } });
       if (saved) {
         return {
@@ -350,7 +354,54 @@ export class CheckoutService {
       }
     }
 
-    return { id: null, snapshot };
+    // Otherwise reuse an identical saved address, or save this one to the address book
+    const match = await prisma.address.findFirst({
+      where: {
+        userId: identity.userId,
+        line1: input.line1,
+        city: input.city,
+        state: input.state,
+        country: input.country,
+        lastName: input.lastName,
+      },
+    });
+    if (match) {
+      return {
+        id: match.id,
+        snapshot: {
+          firstName: match.firstName,
+          lastName: match.lastName,
+          phone: match.phone ?? "",
+          line1: match.line1,
+          line2: match.line2 ?? "",
+          city: match.city,
+          state: match.state,
+          postalCode: match.postalCode ?? "",
+          country: match.country,
+          type,
+        },
+      };
+    }
+
+    const addressCount = await prisma.address.count({ where: { userId: identity.userId } });
+    const created = await prisma.address.create({
+      data: {
+        userId: identity.userId,
+        type: type === "shipping" ? AddressType.SHIPPING : AddressType.BILLING,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone ?? null,
+        line1: input.line1,
+        line2: input.line2 ?? null,
+        city: input.city,
+        state: input.state,
+        postalCode: input.postalCode ?? null,
+        country: input.country,
+        isDefault: addressCount === 0,
+      },
+    });
+
+    return { id: created.id, snapshot };
   }
 
   private summary(

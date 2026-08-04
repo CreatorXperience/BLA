@@ -31,6 +31,17 @@ export class PaymentService {
     // Reuse an existing pending payment if present
     const existing = await paymentRepository.findPendingByOrder(order.id);
     if (existing) {
+      const existingMeta = (existing.meta ?? {}) as { authorizationUrl?: string; accessCode?: string } | null;
+      if (existingMeta?.authorizationUrl) {
+        return {
+          paymentId: existing.id,
+          reference: existing.reference,
+          authorizationUrl: existingMeta.authorizationUrl,
+          accessCode: existingMeta.accessCode ?? null,
+          provider: existing.provider,
+          amount: toNumber(order.grandTotal),
+        };
+      }
       const providerClient = resolveProvider(existing.provider);
       const init = await providerClient.initialize({
         reference: existing.reference,
@@ -40,6 +51,10 @@ export class PaymentService {
         metadata: { orderId: order.id, orderNumber: order.orderNumber },
         method: input.method,
         callbackUrl: input.callbackUrl,
+      });
+      await paymentRepository.update(existing.id, {
+        externalRef: init.externalRef,
+        meta: { authorizationUrl: init.authorizationUrl, accessCode: init.accessCode } as never,
       });
       return {
         paymentId: existing.id,
