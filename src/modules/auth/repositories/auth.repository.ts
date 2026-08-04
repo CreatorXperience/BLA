@@ -107,6 +107,10 @@ export class AuthRepository {
     return prisma.refreshToken.findUnique({ where: { id } });
   }
 
+  async findRefreshTokenByHash(hash: string) {
+    return prisma.refreshToken.findFirst({ where: { token: hash } });
+  }
+
   async revokeRefreshToken(id: string, replacedBy?: string) {
     return prisma.refreshToken.update({
       where: { id },

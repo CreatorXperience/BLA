@@ -7,8 +7,6 @@ import {
   generateOpaqueToken,
   hashOpaqueToken,
   signAccessToken,
-  signRefreshToken,
-  verifyRefreshToken,
 } from "@/utils/token";
 import {
   ConflictError,
@@ -112,14 +110,7 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string, ctx?: { ip?: string; userAgent?: string }): Promise<AuthResponse> {
-    let payload;
-    try {
-      payload = verifyRefreshToken(refreshToken);
-    } catch {
-      throw new UnauthorizedError("Invalid refresh token");
-    }
-
-    const stored = await authRepository.findRefreshTokenById(payload.jti);
+    const stored = await authRepository.findRefreshTokenByHash(hashOpaqueToken(refreshToken));
     if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
       throw new UnauthorizedError("Refresh token has been revoked or expired");
     }
@@ -157,8 +148,8 @@ export class AuthService {
   async logout(refreshToken?: string, sessionId?: string): Promise<void> {
     if (refreshToken) {
       try {
-        const payload = verifyRefreshToken(refreshToken);
-        await authRepository.revokeRefreshToken(payload.jti);
+        const stored = await authRepository.findRefreshTokenByHash(hashOpaqueToken(refreshToken));
+        if (stored) await authRepository.revokeRefreshToken(stored.id);
       } catch {
         // ignore invalid tokens on logout
       }
