@@ -36,6 +36,7 @@ export function cacheKey(prefix: string, ...parts: (string | number)[]): string 
 }
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
+  if (redis.status !== "ready") return null;
   try {
     const raw = await redis.get(key);
     return raw ? (JSON.parse(raw) as T) : null;
@@ -50,6 +51,7 @@ export async function cacheSet(
   value: unknown,
   ttlSeconds: number = env.REDIS_CACHE_TTL,
 ): Promise<void> {
+  if (redis.status !== "ready") return;
   try {
     await redis.set(key, JSON.stringify(value), "EX", ttlSeconds);
   } catch (error) {

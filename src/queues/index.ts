@@ -55,6 +55,22 @@ export async function closeQueues(): Promise<void> {
   await Promise.all(Object.values(queues).map((q) => q.close()));
 }
 
+/** Add a job without blocking the caller when Redis is unreachable. */
+export async function safeAdd<T>(queue: Queue<T>, name: string, data: T, opts?: object): Promise<string> {
+  try {
+    const job = await Promise.race([
+      queue.add(name as never, data as never, opts as never),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("queue timeout")), 3000),
+      ),
+    ]);
+    return job.id ?? "";
+  } catch (error) {
+    logger.warn({ error, queue: queue.name }, "queue unavailable, skipping job");
+    return "";
+  }
+}
+
 // --- Job payload types ------------------------------------------------------
 
 export interface EmailJob {

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { env } from "@/config";
@@ -37,6 +38,24 @@ export function buildApp(): Hono {
   const app = new Hono();
 
   app.use(requestId());
+  app.use(
+    cors({
+      origin: (origin) => {
+        if (!origin) return origin;
+        const allowed = new Set([env.CLIENT_URL, env.APP_URL].filter(Boolean));
+        return allowed.has(origin) ||
+          origin.startsWith("http://localhost") ||
+          origin.startsWith("http://127.0.0.1")
+          ? origin
+          : undefined;
+      },
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization", "Accept", "x-cart-token", "x-csrf-token", "X-Request-Id"],
+      exposeHeaders: ["X-Request-Id"],
+      credentials: true,
+      maxAge: 86400,
+    }),
+  );
   app.use(secureHeaders);
   app.use(requestLogger);
   app.use(logger());

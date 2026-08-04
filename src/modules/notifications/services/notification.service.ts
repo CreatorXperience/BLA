@@ -1,6 +1,6 @@
 import { NotificationChannel, NotificationStatus, NotificationType, Prisma } from "@prisma/client";
 import { prisma } from "@/database/prisma";
-import { emailQueue, notificationQueue } from "@/queues";
+import { emailQueue, notificationQueue, safeAdd } from "@/queues";
 import { sendEmail } from "./email.service";
 import { logger } from "@/shared/logger";
 
@@ -67,12 +67,11 @@ export class NotificationService {
     template: string;
     data: Record<string, unknown>;
   }): Promise<string> {
-    const job = await emailQueue.add("send-email", params, {
+    return safeAdd(emailQueue, "send-email", params, {
       attempts: 4,
       backoff: { type: "exponential", delay: 5_000 },
       removeOnComplete: { age: 60 * 60 * 24, count: 1000 },
     });
-    return job.id ?? "";
   }
 
   async queueNotification(params: {
@@ -84,11 +83,10 @@ export class NotificationService {
     data?: Record<string, unknown>;
     recipient?: string;
   }): Promise<string> {
-    const job = await notificationQueue.add("send-notification", params, {
+    return safeAdd(notificationQueue, "send-notification", params, {
       attempts: 3,
       backoff: { type: "exponential", delay: 3_000 },
     });
-    return job.id ?? "";
   }
 
   async createOutboundMessage(params: {

@@ -24,6 +24,12 @@ export function rateLimit(options: RateLimitOptions = {}): MiddlewareHandler {
       return next();
     }
 
+    // When Redis is unavailable, skip rate limiting instead of blocking
+    // every request on reconnect backoff (~seconds of latency).
+    if (redis.status !== "ready") {
+      return next();
+    }
+
     const keyGen = options.keyGenerator;
     let identifier = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
     const apiKey = c.req.header("authorization")?.replace(/^Bearer\s+/i, "").slice(0, 24);
