@@ -32,19 +32,7 @@ export class OrderController {
     const orderNumber = c.req.param("orderNumber") ?? "";
     const { user } = getAuth(c);
     const order = await orderService.getByOrderNumber(orderNumber, user?.id);
-    return c.json(
-      success({
-        id: order.id,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        timeline: order.timeline,
-        trackingNumber: order.trackingNumber,
-        courier: order.courier,
-        estimatedDays: order.shippingMethod?.estimatedDaysMin && order.shippingMethod?.estimatedDaysMax
-          ? [order.shippingMethod.estimatedDaysMin, order.shippingMethod.estimatedDaysMax]
-          : null,
-      }, "Order tracking"),
-    );
+    return c.json(success(order, "Order tracking"));
   };
 
   invoice = async (c: Context): Promise<Response> => {

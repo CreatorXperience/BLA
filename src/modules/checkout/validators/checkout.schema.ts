@@ -51,7 +51,10 @@ export const CreateOrderSchema = z
     couponCode: z.string().trim().max(50).toUpperCase().optional(),
     payment: z
       .object({
-        provider: z.nativeEnum(PaymentProvider).default(PaymentProvider.PAYSTACK),
+        provider: z
+          .enum(["PAYSTACK", "FLUTTERWAVE", "MANUAL", "paystack", "flutterwave", "manual"])
+          .transform((v) => v.toUpperCase() as PaymentProvider)
+          .default(PaymentProvider.PAYSTACK),
         method: z.nativeEnum(PaymentMethod).optional(),
         callbackUrl: z.string().url().optional(),
       })

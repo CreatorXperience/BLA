@@ -6,11 +6,12 @@ import { AuditAction, PaymentProvider } from "@prisma/client";
 import { recordAudit } from "@/middleware/audit";
 import { logger } from "@/shared/logger";
 import type { InitializePaymentInput, RefundPaymentInput, VerifyPaymentInput } from "../validators";
+import { InitializePaymentSchema, RefundPaymentSchema, VerifyPaymentSchema } from "../validators";
 
 export class PaymentController {
   /** Initialize a payment for an order (customer or checkout). */
   initialize = async (c: Context): Promise<Response> => {
-    const body = (await c.req.json()) as InitializePaymentInput;
+    const body = InitializePaymentSchema.parse(await c.req.json()) as InitializePaymentInput;
     const result = await paymentService.initializeForOrder(body, {
       ip: c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
     });
@@ -19,7 +20,7 @@ export class PaymentController {
 
   /** Client callback verification. */
   verify = async (c: Context): Promise<Response> => {
-    const body = (await c.req.json()) as VerifyPaymentInput;
+    const body = VerifyPaymentSchema.parse(await c.req.json()) as VerifyPaymentInput;
     const payment = await paymentService.verify(body.reference);
     return c.json(success(payment, "Payment verification result"));
   };
@@ -77,7 +78,7 @@ export class PaymentController {
 
   refund = async (c: Context): Promise<Response> => {
     const { user } = getAuth(c);
-    const body = (await c.req.json()) as RefundPaymentInput;
+    const body = RefundPaymentSchema.parse(await c.req.json()) as RefundPaymentInput;
     const refund = await paymentService.refund(body, user.id);
     await recordAudit({ actorId: user.id, action: AuditAction.UPDATE, entity: "Refund", entityId: refund.id, metadata: { amount: refund.amount }, c });
     return c.json(success(refund, "Refund processed"));

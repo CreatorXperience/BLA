@@ -1,10 +1,14 @@
 import { z } from "zod";
 import { PaymentMethod, PaymentProvider } from "@prisma/client";
 
+const ProviderSchema = z
+  .enum(["PAYSTACK", "FLUTTERWAVE", "MANUAL", "paystack", "flutterwave", "manual"])
+  .transform((v) => v.toUpperCase() as PaymentProvider);
+
 export const InitializePaymentSchema = z
   .object({
     orderId: z.string().min(1),
-    provider: z.nativeEnum(PaymentProvider).default(PaymentProvider.PAYSTACK),
+    provider: ProviderSchema.default(PaymentProvider.PAYSTACK),
     method: z.nativeEnum(PaymentMethod).optional(),
     callbackUrl: z.string().url().optional(),
   })

@@ -5,6 +5,7 @@ import { getAuthUser } from "@/middleware/auth";
 import { AuditAction } from "@prisma/client";
 import { recordAudit } from "@/middleware/audit";
 import type { CreateOrderInput } from "../validators";
+import { CreateOrderSchema } from "../validators";
 
 function identity(c: Context) {
   const user = getAuthUser(c);
@@ -19,7 +20,7 @@ function identity(c: Context) {
 export class CheckoutController {
   /** Step: preview order summary before placing. */
   preview = async (c: Context): Promise<Response> => {
-    const body = (await c.req.json()) as CreateOrderInput;
+    const body = CreateOrderSchema.parse(await c.req.json()) as CreateOrderInput;
     const summary = await checkoutService.preview(body, identity(c));
     return c.json(success(summary, "Order summary"));
   };
@@ -27,7 +28,7 @@ export class CheckoutController {
   /** Final: create order + payment intent. */
   placeOrder = async (c: Context): Promise<Response> => {
     const id = identity(c);
-    const body = (await c.req.json()) as CreateOrderInput;
+    const body = CreateOrderSchema.parse(await c.req.json()) as CreateOrderInput;
     const result = await checkoutService.placeOrder(body, id);
     await recordAudit({
       actorId: id.userId,
