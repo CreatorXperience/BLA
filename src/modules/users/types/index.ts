@@ -1,0 +1,15 @@
+export {
+  UpdateProfileSchema,
+  UpdateProfileInput,
+  ChangePasswordSchema,
+  ChangePasswordInput,
+  UpdateEmailSchema,
+  UpdateEmailInput,
+  CreateAddressSchema,
+  CreateAddressInput,
+  UpdateAddressSchema,
+  UpdateAddressInput,
+  SetDefaultAddressSchema,
+  NotificationPreferencesSchema,
+  NotificationPreferencesInput,
+} from "../dto/users.dto";

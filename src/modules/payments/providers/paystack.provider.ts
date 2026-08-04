@@ -1,0 +1,109 @@
+import { createHmac } from "node:crypto";
+import { PaymentProvider } from "@prisma/client";
+import { env } from "@/config";
+import { PaymentError } from "@/shared/errors";
+import { logger } from "@/shared/logger";
+import type {
+  InitializePaymentParams,
+  InitializePaymentResult,
+  PaymentProviderClient,
+  RefundResult,
+  VerifyPaymentResult,
+} from "../types/payment.types";
+
+const PAYSTACK_BASE = "https://api.paystack.co";
+
+async function paystackRequest(path: string, options: RequestInit = {}, method = "GET") {
+  const res = await fetch(`${PAYSTACK_BASE}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+    body: options.body,
+  });
+  const json = (await res.json().catch(() => ({}))) as { status?: boolean; message?: string; data?: unknown };
+  if (!res.ok || json.status === false) {
+    throw new PaymentError(json.message ?? `Paystack request failed (${res.status})`, {
+      status: res.status,
+      data: json.data,
+    });
+  }
+  return json.data;
+}
+
+export class PaystackProvider implements PaymentProviderClient {
+  readonly provider = PaymentProvider.PAYSTACK;
+
+  async initialize(params: InitializePaymentParams): Promise<InitializePaymentResult> {
+    const amountMinor = Math.round(params.amount * 100); // Paystack uses minor units
+    const data = (await paystackRequest(
+      "/transaction/initialize",
+      {
+        body: JSON.stringify({
+          reference: params.reference,
+          amount: amountMinor,
+          currency: params.currency,
+          email: params.email,
+          callback_url: params.callbackUrl,
+          metadata: params.metadata,
+        }),
+      },
+      "POST",
+    )) as { authorization_url: string; access_code?: string };
+
+    return {
+      authorizationUrl: data.authorization_url,
+      accessCode: data.access_code,
+    };
+  }
+
+  async verify(reference: string): Promise<VerifyPaymentResult> {
+    const data = (await paystackRequest(
+      `/transaction/verify/${encodeURIComponent(reference)}`,
+    )) as {
+      status?: string;
+      amount?: number;
+      currency?: string;
+      paid_at?: string | null;
+      gateway_response?: string;
+      authorization?: unknown;
+    };
+
+    const statusMap: VerifyPaymentResult["status"] =
+      data.status === "success" ? "success" : data.status === "abandoned" ? "abandoned" : data.status === "failed" ? "failed" : "pending";
+
+    return {
+      status: statusMap,
+      amount: (data.amount ?? 0) / 100,
+      currency: data.currency,
+      paidAt: data.paid_at ? new Date(data.paid_at) : null,
+      authorization: data.authorization,
+      failureReason: data.gateway_response,
+      raw: data,
+    };
+  }
+
+  async refund(params: { reference: string; amount: number; reason?: string }): Promise<RefundResult> {
+    const data = (await paystackRequest(
+      "/refund",
+      { body: JSON.stringify({ transaction: params.reference, amount: Math.round(params.amount * 100), reason: params.reason }) },
+      "POST",
+    )) as { id: number; status: string };
+
+    return { externalRef: String(data.id), status: data.status };
+  }
+
+  verifyWebhookSignature(payload: string, signature?: string): boolean {
+    if (!signature) return false;
+    const hash = createHmac("sha512", env.PAYSTACK_WEBHOOK_SECRET || env.PAYSTACK_SECRET_KEY)
+      .update(payload)
+      .digest("hex");
+    return hash === signature;
+  }
+}
+
+export function createPaystackProvider(): PaymentProviderClient {
+  return new PaystackProvider();
+}
