@@ -30,9 +30,11 @@ export class PaymentService {
     }
 
     // Flutterwave's hosted checkout requires a redirect_url; Paystack tolerates a
-    // missing one. Default it so the shopper returns to the confirmation page.
-    const callbackUrl =
-      input.callbackUrl ?? `${env.CLIENT_URL}/checkout/success?order=${order.orderNumber}`;
+    // missing one. Default it (carrying the payment reference) so the shopper returns
+    // to the confirmation page, which then verifies the transaction and, on
+    // failure, restores the cart so they can retry.
+    const buildCallbackUrl = (reference: string) =>
+      input.callbackUrl ?? `${env.CLIENT_URL}/checkout/success?order=${order.orderNumber}&reference=${reference}`;
 
     // Reuse an existing pending payment ONLY if it is already on the requested
     // provider (dedupe + avoid duplicate references). If the shopper explicitly
@@ -60,7 +62,7 @@ export class PaymentService {
         email: order.email,
         metadata: { orderId: order.id, orderNumber: order.orderNumber },
         method: input.method,
-        callbackUrl,
+        callbackUrl: buildCallbackUrl(existing.reference),
       });
       await paymentRepository.update(existing.id, {
         externalRef: init.externalRef,
@@ -109,7 +111,7 @@ export class PaymentService {
         email: order.email,
         metadata: { orderId: order.id, orderNumber: order.orderNumber },
         method: input.method,
-        callbackUrl,
+        callbackUrl: buildCallbackUrl(reference),
       });
     } catch (error) {
       await paymentRepository.update(payment.id, { status: PaymentStatus.FAILED, failureReason: error instanceof Error ? error.message : "Provider error" });
@@ -194,6 +196,36 @@ export class PaymentService {
         failureReason: result.failureReason ?? `Provider returned ${result.status}`,
         lastVerifiedAt: new Date(),
       });
+
+      // The order must not be treated as successful. Cancel it (releasing the
+      // deducted stock) and put the items back in the customer's cart so they can
+      // retry checkout.
+      if (payment.order?.status === OrderStatus.PENDING) {
+        const order = await prisma.order.findUnique({
+          where: { id: payment.orderId },
+          include: { items: true },
+        });
+        if (order && order.status === OrderStatus.PENDING) {
+          await orderService.updateStatus(
+            order.id,
+            {
+              status: OrderStatus.CANCELLED,
+              reason: `Payment ${result.status}: ${result.failureReason ?? "customer did not complete payment"}`,
+              notifyCustomer: false,
+            },
+          );
+          const { cartService } = await import("@/modules/cart/services/cart.service");
+          await cartService.restoreOrderItems({
+            userId: order.userId,
+            items: order.items.map((i) => ({
+              variantId: i.variantId,
+              productId: i.productId,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice.toString(),
+            })),
+          });
+        }
+      }
     } else {
       // pending: schedule async re-verification
       await paymentRepository.update(paymentId, { lastVerifiedAt: new Date() });

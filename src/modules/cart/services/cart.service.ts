@@ -197,6 +197,37 @@ export class CartService {
     await cartRepository.markCheckedOut(cart.id);
   }
 
+  /**
+   * Put the items of a failed/abandoned order back into the customer's cart so
+   * they can retry checkout. Only applies to account carts (checkout requires
+   * login), keyed by the order's userId.
+   */
+  async restoreOrderItems(order: { userId: string | null; items: Array<{ variantId: string | null; productId: string; quantity: number; unitPrice: number | string }> }) {
+    if (!order.userId) return null;
+
+    let cart = await this.resolveCart({ userId: order.userId });
+    if (!cart) {
+      cart = await cartRepository.createForUser(order.userId);
+    } else if (cart.status !== CartStatus.ACTIVE) {
+      // Post-checkout the cart is CHECKED_OUT/empty; reset it to ACTIVE first.
+      cart = await cartRepository.reactivate(cart.id);
+    }
+
+    for (const item of order.items) {
+      if (!item.variantId) continue;
+      await cartRepository.upsertItem({
+        cartId: cart.id,
+        variantId: item.variantId,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: toNumber(item.unitPrice),
+      });
+    }
+
+    const updated = await cartRepository.findByToken(cart.token);
+    return this.composeCart(updated!);
+  }
+
   async countItems(params: { userId?: string; guestToken?: string }) {
     const cart = await this.resolveCart({ userId: params.userId, guestToken: params.guestToken });
     if (!cart) return 0;
