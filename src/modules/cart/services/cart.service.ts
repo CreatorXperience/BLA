@@ -36,11 +36,18 @@ export class CartService {
   async getCart(params: { userId?: string; guestToken?: string; country?: string; region?: string; shippingMethodId?: string }) {
     let cart = await this.resolveCart({ userId: params.userId, guestToken: params.guestToken });
 
+    // Reset any stale non-active cart (CHECKED_OUT residue after a cancelled payment,
+    // a MERGED guest cart) to ACTIVE FIRST — before merging. Reactivating clears stale
+    // leftovers, so it must run before the merge or it would wipe the items we fold in.
+    if (cart && cart.status !== CartStatus.ACTIVE) {
+      cart = await cartRepository.reactivate(cart.id);
+    }
+
     // Guest cart + logged-in user => merge guest into user cart
-    if (params.userId && params.guestToken) {
+    if (cart && params.userId && params.guestToken) {
       const guestCart = await cartRepository.findByToken(params.guestToken);
-      if (guestCart && guestCart.id !== cart!.id && guestCart.items.length > 0) {
-        await cartRepository.mergeInto(cart!.id, guestCart.id);
+      if (guestCart && guestCart.id !== cart.id && guestCart.items.length > 0) {
+        await cartRepository.mergeInto(cart.id, guestCart.id);
         cart = await cartRepository.findByUserId(params.userId);
       }
     }
@@ -48,13 +55,6 @@ export class CartService {
     if (!cart) {
       // Return an empty cart shape so the client always gets a valid payload
       return this.buildEmptyCart(params.userId ? { userId: params.userId } : { guestToken: params.guestToken });
-    }
-
-    // A cart left in a non-active state (e.g. CHECKED_OUT residue after a cancelled
-    // payment, or a MERGED guest cart) must never be handed back to the client. Reset
-    // it to ACTIVE (clearing any stale leftovers) so reads always yield a usable cart.
-    if (cart.status !== CartStatus.ACTIVE) {
-      cart = await cartRepository.reactivate(cart.id);
     }
 
     return this.composeCart(cart, { country: params.country, region: params.region, shippingMethodId: params.shippingMethodId });
