@@ -50,6 +50,13 @@ export class CartService {
       return this.buildEmptyCart(params.userId ? { userId: params.userId } : { guestToken: params.guestToken });
     }
 
+    // A cart left in a non-active state (e.g. CHECKED_OUT residue after a cancelled
+    // payment, or a MERGED guest cart) must never be handed back to the client. Reset
+    // it to ACTIVE (clearing any stale leftovers) so reads always yield a usable cart.
+    if (cart.status !== CartStatus.ACTIVE) {
+      cart = await cartRepository.reactivate(cart.id);
+    }
+
     return this.composeCart(cart, { country: params.country, region: params.region, shippingMethodId: params.shippingMethodId });
   }
 

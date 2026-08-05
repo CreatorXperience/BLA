@@ -1,6 +1,7 @@
 import { OrderStatus, AddressType } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 import { cartService } from "@/modules/cart/services/cart.service";
+import { cartRepository } from "@/modules/cart/repositories/cart.repository";
 import { couponService } from "@/modules/coupons/services/coupon.service";
 import { shippingService } from "@/modules/shipping/services/shipping.service";
 import { orderRepository } from "@/modules/orders/repositories/order.repository";
@@ -103,7 +104,8 @@ export class CheckoutService {
       : null;
 
     // 4. Create order + deduct stock atomically
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(
+      async (tx) => {
       const order = await orderRepository.create(
         {
           userId: identity.userId,
@@ -158,7 +160,9 @@ export class CheckoutService {
       );
 
       return order;
-    });
+      },
+      { timeout: 15000 },
+    );
 
     // 5. Record coupon redemption
     if (coupon?.id && coupon.discount > 0) {
@@ -233,7 +237,28 @@ export class CheckoutService {
         },
       },
     });
-    if (!raw || raw.status !== "ACTIVE") throw new ValidationError("Cart is not active");
+    if (!raw || raw.status !== "ACTIVE") {
+      // Recover a cart that landed in a non-active state (CHECKED_OUT residue, a
+      // concurrently-checked-out cart, or a stale MERGED guest cart) instead of
+      // failing checkout. reactivate clears any leftover items and resets to ACTIVE.
+      if (!raw) throw new ValidationError("Your cart is empty");
+      await cartRepository.reactivate(raw.id);
+      return (await prisma.cart.findUnique({
+        where: { id: raw.id },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: { include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } } },
+                  inventory: true,
+                },
+              },
+            },
+          },
+        },
+      })) as unknown as CartLike;
+    }
 
     return raw as unknown as CartLike;
   }

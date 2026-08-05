@@ -75,38 +75,51 @@ export class CartRepository {
   }
 
   async mergeInto(targetCartId: string, sourceCartId: string) {
-    const sourceItems = await prisma.cartItem.findMany({ where: { cartId: sourceCartId } });
-    for (const item of sourceItems) {
-      await prisma.cartItem.upsert({
-        where: { cartId_variantId: { cartId: targetCartId, variantId: item.variantId } },
-        update: { quantity: { increment: item.quantity }, price: item.price },
-        create: {
-          cartId: targetCartId,
-          variantId: item.variantId,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-        },
+    await prisma.$transaction(async (tx) => {
+      const sourceItems = await tx.cartItem.findMany({ where: { cartId: sourceCartId } });
+      for (const item of sourceItems) {
+        await tx.cartItem.upsert({
+          where: { cartId_variantId: { cartId: targetCartId, variantId: item.variantId } },
+          update: { quantity: { increment: item.quantity }, price: item.price },
+          create: {
+            cartId: targetCartId,
+            variantId: item.variantId,
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+          },
+        });
+      }
+      // The source (guest) cart is folded into the target — clear its items so it
+      // never retains duplicates and can't be resolved as a stale non-active cart later.
+      await tx.cartItem.deleteMany({ where: { cartId: sourceCartId } });
+      await tx.cart.update({
+        where: { id: sourceCartId },
+        data: { status: CartStatus.MERGED },
       });
-    }
-    await prisma.cart.update({
-      where: { id: sourceCartId },
-      data: { status: CartStatus.MERGED },
-    });
+      },
+      { timeout: 15000 },
+    );
   }
 
   async markCheckedOut(cartId: string) {
-    await prisma.cartItem.deleteMany({ where: { cartId } });
-    return prisma.cart.update({ where: { id: cartId }, data: { status: CartStatus.CHECKED_OUT } });
+    return prisma.$transaction(async (tx) => {
+      await tx.cartItem.deleteMany({ where: { cartId } });
+      return tx.cart.update({ where: { id: cartId }, data: { status: CartStatus.CHECKED_OUT } });
+      },
+      { timeout: 15000 },
+    );
   }
 
   /** Reuse the user's single cart row after a checkout: reset to active, clear items. */
   async reactivate(cartId: string) {
-    await prisma.cartItem.deleteMany({ where: { cartId } });
-    return prisma.cart.update({
-      where: { id: cartId },
-      data: { status: CartStatus.ACTIVE, couponCode: null, shippingCountry: null, shippingRegion: null, shippingMethodId: null },
-      include: cartInclude,
+    return prisma.$transaction(async (tx) => {
+      await tx.cartItem.deleteMany({ where: { cartId } });
+      return tx.cart.update({
+        where: { id: cartId },
+        data: { status: CartStatus.ACTIVE, couponCode: null, shippingCountry: null, shippingRegion: null, shippingMethodId: null },
+        include: cartInclude,
+      });
     });
   }
 
