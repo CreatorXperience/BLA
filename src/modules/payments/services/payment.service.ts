@@ -8,6 +8,7 @@ import { NotFoundError, PaymentError, ConflictError } from "@/shared/errors";
 import { paymentVerificationQueue, safeAdd } from "@/queues";
 import { logger } from "@/shared/logger";
 import { roundMoney, toNumber } from "@/utils/money";
+import { env } from "@/config";
 import type { InitializePaymentInput, RefundPaymentInput } from "../validators";
 import type { VerifyPaymentResult } from "../types";
 
@@ -27,6 +28,11 @@ export class PaymentService {
     if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.PAID) {
       throw new ConflictError("Order is already in a final state");
     }
+
+    // Flutterwave's hosted checkout requires a redirect_url; Paystack tolerates a
+    // missing one. Default it so the shopper returns to the confirmation page.
+    const callbackUrl =
+      input.callbackUrl ?? `${env.CLIENT_URL}/checkout/success?order=${order.orderNumber}`;
 
     // Reuse an existing pending payment ONLY if it is already on the requested
     // provider (dedupe + avoid duplicate references). If the shopper explicitly
@@ -54,7 +60,7 @@ export class PaymentService {
         email: order.email,
         metadata: { orderId: order.id, orderNumber: order.orderNumber },
         method: input.method,
-        callbackUrl: input.callbackUrl,
+        callbackUrl,
       });
       await paymentRepository.update(existing.id, {
         externalRef: init.externalRef,
@@ -103,7 +109,7 @@ export class PaymentService {
         email: order.email,
         metadata: { orderId: order.id, orderNumber: order.orderNumber },
         method: input.method,
-        callbackUrl: input.callbackUrl,
+        callbackUrl,
       });
     } catch (error) {
       await paymentRepository.update(payment.id, { status: PaymentStatus.FAILED, failureReason: error instanceof Error ? error.message : "Provider error" });
