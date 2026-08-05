@@ -28,9 +28,13 @@ export class PaymentService {
       throw new ConflictError("Order is already in a final state");
     }
 
-    // Reuse an existing pending payment if present
+    // Reuse an existing pending payment ONLY if it is already on the requested
+    // provider (dedupe + avoid duplicate references). If the shopper explicitly
+    // picks a different provider — e.g. the order was auto-initialized on Paystack
+    // but they select Flutterwave — abandon the stale pending payment so it can't
+    // redirect to the wrong gateway, then initialize the provider they actually chose.
     const existing = await paymentRepository.findPendingByOrder(order.id);
-    if (existing) {
+    if (existing && existing.provider === input.provider) {
       const existingMeta = (existing.meta ?? {}) as { authorizationUrl?: string; accessCode?: string } | null;
       if (existingMeta?.authorizationUrl) {
         return {
@@ -65,8 +69,14 @@ export class PaymentService {
         amount: toNumber(order.grandTotal),
       };
     }
+    if (existing && existing.provider !== input.provider) {
+      await paymentRepository.update(existing.id, {
+        status: PaymentStatus.FAILED,
+        failureReason: `Provider changed to ${input.provider}`,
+      });
+    }
 
-    const reference = generateReference("PSK");
+    const reference = generateReference(input.provider === PaymentProvider.FLUTTERWAVE ? "FLW" : "PSK");
     const payment = await paymentRepository.create({
       orderId: order.id,
       provider: input.provider,
