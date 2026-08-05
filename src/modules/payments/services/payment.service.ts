@@ -200,32 +200,10 @@ export class PaymentService {
       // The order must not be treated as successful. Cancel it (releasing the
       // deducted stock) and put the items back in the customer's cart so they can
       // retry checkout.
-      if (payment.order?.status === OrderStatus.PENDING) {
-        const order = await prisma.order.findUnique({
-          where: { id: payment.orderId },
-          include: { items: true },
-        });
-        if (order && order.status === OrderStatus.PENDING) {
-          await orderService.updateStatus(
-            order.id,
-            {
-              status: OrderStatus.CANCELLED,
-              reason: `Payment ${result.status}: ${result.failureReason ?? "customer did not complete payment"}`,
-              notifyCustomer: false,
-            },
-          );
-          const { cartService } = await import("@/modules/cart/services/cart.service");
-          await cartService.restoreOrderItems({
-            userId: order.userId,
-            items: order.items.map((i) => ({
-              variantId: i.variantId,
-              productId: i.productId,
-              quantity: i.quantity,
-              unitPrice: i.unitPrice.toString(),
-            })),
-          });
-        }
-      }
+      await this.failUnpaidOrder(
+        payment.orderId,
+        result.failureReason ?? `Payment ${result.status}: customer did not complete payment`,
+      );
     } else {
       // pending: schedule async re-verification
       await paymentRepository.update(paymentId, { lastVerifiedAt: new Date() });
@@ -325,6 +303,73 @@ export class PaymentService {
     }
 
     return refund;
+  }
+
+  /**
+   * Cancel an unpaid pending order and hand its items back to the customer's cart
+   * so they can retry checkout. Also fails any still-OPEN (pending/authorized)
+   * payment attempts on it, releasing the deduct stock. Idempotent.
+   */
+  private async failUnpaidOrder(orderId: string, reason: string) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true, payments: true },
+    });
+    if (!order || order.status !== OrderStatus.PENDING) return;
+
+    for (const payment of order.payments) {
+      if (payment.status === PaymentStatus.PENDING || payment.status === PaymentStatus.AUTHORIZED) {
+        await paymentRepository.update(payment.id, {
+          status: PaymentStatus.FAILED,
+          failureReason: reason,
+          lastVerifiedAt: new Date(),
+        });
+      }
+    }
+
+    await orderService.updateStatus(
+      order.id,
+      { status: OrderStatus.CANCELLED, reason, notifyCustomer: false },
+    );
+
+    const { cartService } = await import("@/modules/cart/services/cart.service");
+    await cartService.restoreOrderItems({
+      userId: order.userId,
+      items: order.items.map((i) => ({
+        variantId: i.variantId,
+        productId: i.productId,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice.toString(),
+      })),
+    });
+  }
+
+  /**
+   * Reconcile orders abandoned before payment completed (gateway cancelled or
+   * page closed with no return). Such orders stay PENDING with stock deducted;
+   * once they are past the grace period and carry no captured/authorized payment,
+   * fail them and hand the items back to the cart. Returns the number expired.
+   */
+  async expireAbandonedPayments(olderThanMs = 30 * 60 * 1000) {
+    const cutoff = new Date(Date.now() - olderThanMs);
+    const staleOrders = await prisma.order.findMany({
+      where: {
+        status: OrderStatus.PENDING,
+        createdAt: { lt: cutoff },
+      },
+      select: {
+        id: true,
+        payments: { where: { status: { in: [PaymentStatus.CAPTURED, PaymentStatus.AUTHORIZED] } }, select: { id: true } },
+      },
+    });
+
+    let expired = 0;
+    for (const order of staleOrders) {
+      if (order.payments.length > 0) continue; // already paid/being paid — leave it
+      await this.failUnpaidOrder(order.id, "Payment abandoned: order cancelled after timeout");
+      expired += 1;
+    }
+    return expired;
   }
 
   async listTransactions(query: { page: number; perPage: number; status?: string; provider?: string }) {

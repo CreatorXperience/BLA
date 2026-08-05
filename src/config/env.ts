@@ -25,6 +25,9 @@ const envSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
   REDIS_CACHE_TTL: z.coerce.number().default(300),
 
+  ORDER_PAYMENT_GRACE_MS: z.coerce.number().optional(),
+  ORDER_PAYMENT_SWEEP_MS: z.coerce.number().optional(),
+
   S3_ENDPOINT: z.string().default(""),
   S3_REGION: z.string().default("auto"),
   S3_ACCESS_KEY_ID: z.string().default(""),
