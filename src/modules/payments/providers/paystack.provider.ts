@@ -61,16 +61,28 @@ export class PaystackProvider implements PaymentProviderClient {
   }
 
   async verify(reference: string): Promise<VerifyPaymentResult> {
-    const data = (await paystackRequest(
-      `/transaction/verify/${encodeURIComponent(reference)}`,
-    )) as {
-      status?: string;
-      amount?: number;
-      currency?: string;
-      paid_at?: string | null;
-      gateway_response?: string;
-      authorization?: unknown;
-    };
+    let data;
+    try {
+      data = (await paystackRequest(
+        `/transaction/verify/${encodeURIComponent(reference)}`,
+      )) as {
+        status?: string;
+        amount?: number;
+        currency?: string;
+        paid_at?: string | null;
+        gateway_response?: string;
+        authorization?: unknown;
+      };
+    } catch (error) {
+      // A reference that was initialized but never paid can come back as unknown at
+      // verification. That is an abandoned attempt, not a gateway outage, so surface
+      // it as abandoned rather than throwing (which callers would read as pending).
+      const message = error instanceof Error ? error.message : "";
+      if (/(not found|unknown transaction|does not exist|no transaction)/i.test(message)) {
+        return { status: "abandoned", amount: 0, failureReason: "Transaction was not completed at the gateway" };
+      }
+      throw error;
+    }
 
     const statusMap: VerifyPaymentResult["status"] =
       data.status === "success" ? "success" : data.status === "abandoned" ? "abandoned" : data.status === "failed" ? "failed" : "pending";

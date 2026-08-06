@@ -149,6 +149,31 @@ export class PaymentService {
     const providerClient = resolveProvider(payment.provider);
     const result = await providerClient.verify(reference);
     await this.settleVerification(payment.id, result);
+
+    // This endpoint is called when the shopper returns from the gateway (or
+    // posts back after paying). A result that stayed PENDING here almost always
+    // means they abandoned/cancelled — a genuinely in-progress charge doesn't
+    // return to this page yet. Give the provider a brief window to finalise the
+    // charge, and if it still isn't paid, settle it as an abandoned payment so
+    // the order can't hang on a "pending confirmation" and the shopper can retry.
+    const live = await paymentRepository.findById(payment.id);
+    if (live && live.status === PaymentStatus.PENDING) {
+      let settled = false;
+      for (let attempt = 0; attempt < 1; attempt += 1) {
+        await new Promise((r) => setTimeout(r, 2500));
+        const again = await providerClient.verify(reference);
+        await this.settleVerification(payment.id, again);
+        const now = await paymentRepository.findById(payment.id);
+        if (now && now.status !== PaymentStatus.PENDING) {
+          settled = true;
+          break;
+        }
+      }
+      if (!settled) {
+        await this.failUnpaidOrder(payment.orderId, "Payment not completed after the gateway returned pending");
+      }
+    }
+
     return paymentRepository.findByReference(reference);
   }
 

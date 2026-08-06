@@ -61,29 +61,42 @@ export class FlutterwaveProvider implements PaymentProviderClient {
 
   async verify(reference: string): Promise<VerifyPaymentResult> {
     // Flutterwave stores tx_ref; query by transaction reference via the v3 verify-by-ref endpoint.
-    const data = (await flutterwaveRequest(
-      `/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
-    )) as {
-      status?: string;
-      amount?: number;
-      currency?: string;
-      paid_at?: string | null;
-      id?: number;
-      processor_response?: string;
-    };
+    try {
+      const data = (await flutterwaveRequest(
+        `/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
+      )) as {
+        status?: string;
+        amount?: number;
+        currency?: string;
+        paid_at?: string | null;
+        id?: number;
+        processor_response?: string;
+      };
 
-    const statusMap: VerifyPaymentResult["status"] =
-      data.status === "successful" ? "success" : data.status === "failed" ? "failed" : data.status === "cancelled" ? "abandoned" : "pending";
+      const statusMap: VerifyPaymentResult["status"] =
+        data.status === "successful" ? "success" : data.status === "failed" ? "failed" : data.status === "cancelled" ? "abandoned" : "pending";
 
-    return {
-      status: statusMap,
-      amount: data.amount ?? 0,
-      currency: data.currency,
-      paidAt: data.paid_at ? new Date(data.paid_at) : null,
-      externalRef: data.id ? String(data.id) : undefined,
-      failureReason: data.processor_response,
-      raw: data,
-    };
+      return {
+        status: statusMap,
+        amount: data.amount ?? 0,
+        currency: data.currency,
+        paidAt: data.paid_at ? new Date(data.paid_at) : null,
+        externalRef: data.id ? String(data.id) : undefined,
+        failureReason: data.processor_response,
+        raw: data,
+      };
+    } catch (error) {
+      // An initialized reference that was never completed has no payable record at
+      // Flutterwave, which responds with a "transaction not found" error. That is
+      // not a failure to reach the gateway — it is a sign the shopper abandoned or
+      // cancelled, so surface it as an abandoned payment instead of throwing, which
+      // the caller would otherwise misread as still-pending.
+      const message = error instanceof Error ? error.message : "";
+      if (/(not found|no transaction|does not exist|no payment)/i.test(message)) {
+        return { status: "abandoned", amount: 0, failureReason: "Transaction was not completed at the gateway" };
+      }
+      throw error;
+    }
   }
 
   async refund(params: { reference: string; amount: number; reason?: string }): Promise<RefundResult> {
