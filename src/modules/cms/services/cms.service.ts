@@ -11,8 +11,12 @@ export class CmsService {
       cmsRepository.getActiveAnnouncement(),
       cmsRepository.listNavigation(true),
     ]);
+    const active = sections.filter((s) => s.status === "ACTIVE");
     return {
-      sections: sections.filter((s) => s.status === "ACTIVE"),
+      // Hero slides are the (multiple) active HERO_BANNER sections; the storefront
+      // Hero carousel reads them from the top-level `hero` array.
+      hero: active.filter((s) => s.sectionType === "HERO_BANNER"),
+      sections: active.filter((s) => s.sectionType !== "HERO_BANNER"),
       announcement,
       navigation,
     };
